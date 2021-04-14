@@ -7,16 +7,38 @@
 
 import UIKit
 
+enum TestFlags {
+    case sceneDelegate
+    case userActivityDelegate
+    case responder
+    case viewController
+    case alternativeResponder
+}
+
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
+    static let enabledFlags: Set<TestFlags> = [.viewController, .sceneDelegate, .userActivityDelegate]
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
         // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
         guard let _ = (scene as? UIWindowScene) else { return }
+        
+        // Restore or create new one
+        scene.userActivity = session.stateRestorationActivity ?? NSUserActivity(activityType: "restoration")
+        if SceneDelegate.enabledFlags.contains(.userActivityDelegate) {
+            scene.userActivity?.delegate = self
+        }
+        if let userInfo = session.stateRestorationActivity?.userInfo {
+            print("Has scene value: \(userInfo["SceneKey"] != nil)")
+            print("Has delegate value: \(userInfo["DelegateKey"] != nil)")
+            print("Has responder value: \(userInfo["ResponderKey"] != nil)")
+            print("Has view ctrl value: \(userInfo["ViewControllerKey"] != nil)")
+            print("Has alt responder value: \(userInfo["AltResponderKey"] != nil)")
+        }
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
@@ -46,7 +68,26 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Use this method to save data, release shared resources, and store enough scene-specific state information
         // to restore the scene back to its current state.
     }
+    
+    func stateRestorationActivity(for scene: UIScene) -> NSUserActivity? {
+        print("stateRestorationActivity for scene called")
+        if SceneDelegate.enabledFlags.contains(.sceneDelegate) {
+            scene.userActivity?.addUserInfoEntries(from: ["SceneKey": "SceneValue"])
+        }
+        return scene.userActivity
+    }
 
-
+    func scene(_ scene: UIScene, didUpdate userActivity: NSUserActivity) {
+        print("scene did update user activity")
+        fatalError("never gets called?")
+    }
 }
 
+extension SceneDelegate: NSUserActivityDelegate {
+    func userActivityWillSave(_ userActivity: NSUserActivity) {
+        print("NSUserActivityDelegate called")
+        if SceneDelegate.enabledFlags.contains(.userActivityDelegate) {
+            userActivity.addUserInfoEntries(from: ["DelegateKey": "DelegateValue"])
+        }
+    }
+}
