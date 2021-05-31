@@ -19,7 +19,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
-    static let enabledFlags: Set<TestFlags> = [.viewController, .sceneDelegate, .userActivityDelegate]
+    static let enabledFlags: Set<TestFlags> = [ .responder, .alternativeResponder, .userActivityDelegate, .sceneDelegate, .viewController]
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
@@ -28,16 +28,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let _ = (scene as? UIWindowScene) else { return }
         
         // Restore or create new one
-        scene.userActivity = session.stateRestorationActivity ?? NSUserActivity(activityType: "restoration")
+        scene.userActivity = session.stateRestorationActivity ?? NSUserActivity(activityType: "com.berlinphil.SampleRestore.mainActivity")
         if SceneDelegate.enabledFlags.contains(.userActivityDelegate) {
             scene.userActivity?.delegate = self
         }
-        if let userInfo = session.stateRestorationActivity?.userInfo {
-            print("Has scene value: \(userInfo["SceneKey"] != nil)")
-            print("Has delegate value: \(userInfo["DelegateKey"] != nil)")
-            print("Has responder value: \(userInfo["ResponderKey"] != nil)")
-            print("Has view ctrl value: \(userInfo["ViewControllerKey"] != nil)")
-            print("Has alt responder value: \(userInfo["AltResponderKey"] != nil)")
+        if let activity = session.stateRestorationActivity {
+            let userInfo = activity.userInfo
+            print("Has scene value: \(userInfo?["SceneKey"] != nil)")
+            print("Has delegate value: \(userInfo?["DelegateKey"] != nil)")
+            print("Has responder value: \(userInfo?["ResponderKey"] != nil)")
+            print("Has view ctrl value: \(userInfo?["ViewControllerKey"] != nil)")
+            print("Has alt responder value: \(userInfo?["AltResponderKey"] != nil)")
+        } else {
+            print("No state restoration activity")
         }
     }
 
@@ -72,14 +75,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func stateRestorationActivity(for scene: UIScene) -> NSUserActivity? {
         print("stateRestorationActivity for scene called")
         if SceneDelegate.enabledFlags.contains(.sceneDelegate) {
-            scene.userActivity?.addUserInfoEntries(from: ["SceneKey": "SceneValue"])
+            scene.userActivity?.addUserInfoEntries(from: ["SceneKey": "SceneValue \(Date().debugDescription)"])
         }
         return scene.userActivity
     }
 
     func scene(_ scene: UIScene, didUpdate userActivity: NSUserActivity) {
         print("scene did update user activity")
-        fatalError("never gets called?")
+        fatalError("Never gets called?")
     }
 }
 
